@@ -32,8 +32,15 @@ class ProjectsIntegrationTest {
         var url = "http://localhost:" + port + "/api/projects";
         var rt = restTemplate.withBasicAuth("admin", "admin123");
         ResponseEntity<String> resp = rt.getForEntity(url, String.class);
-        // should be OK (may be empty list)
         assertTrue(resp.getStatusCode().is2xxSuccessful());
+    }
+
+    @Test
+    void invalidProjectStatusFilterShouldReturnBadRequest() {
+        var url = "http://localhost:" + port + "/api/projects?status=INVALID_STATUS";
+        var rt = restTemplate.withBasicAuth("admin", "admin123");
+        ResponseEntity<String> resp = rt.getForEntity(url, String.class);
+        assertEquals(HttpStatus.BAD_REQUEST, resp.getStatusCode());
     }
 }
 

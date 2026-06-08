@@ -35,4 +35,12 @@ public class ProjectControllerSecurityTest {
         var resp = rt.getForEntity(url, String.class);
         assertTrue(resp.getStatusCode().is2xxSuccessful());
     }
+
+    @Test
+    void invalidProjectStatusFilterShouldReturnBadRequest() {
+        var url = "http://localhost:" + port + "/api/projects?status=INVALID_STATUS";
+        var rt = restTemplate.withBasicAuth("admin", "admin123");
+        var resp = rt.getForEntity(url, String.class);
+        assertEquals(HttpStatus.BAD_REQUEST, resp.getStatusCode());
+    }
 }
