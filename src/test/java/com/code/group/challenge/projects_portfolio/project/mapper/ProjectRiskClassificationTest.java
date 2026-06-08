@@ -2,9 +2,9 @@ package com.code.group.challenge.projects_portfolio.project.mapper;
 
 import com.code.group.challenge.projects_portfolio.member.domain.Member;
 import com.code.group.challenge.projects_portfolio.member.domain.MemberRole;
-import com.code.group.challenge.projects_portfolio.member.service.MemberService;
 import com.code.group.challenge.projects_portfolio.project.domain.Project;
 import com.code.group.challenge.projects_portfolio.project.domain.ProjectStatus;
+import com.code.group.challenge.projects_portfolio.project.service.ProjectRiskCalculator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -20,8 +20,7 @@ public class ProjectRiskClassificationTest {
 
     @BeforeEach
     void setUp() {
-        MemberService memberService = Mockito.mock(MemberService.class);
-        projectMapper = new ProjectMapper(memberService);
+        projectMapper = new ProjectMapper(new ProjectRiskCalculator());
     }
 
     @Test

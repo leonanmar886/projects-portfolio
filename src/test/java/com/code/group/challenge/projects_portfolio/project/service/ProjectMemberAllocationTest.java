@@ -9,7 +9,9 @@ import com.code.group.challenge.projects_portfolio.project.dto.MemberAssociation
 import com.code.group.challenge.projects_portfolio.project.exception.MemberAllocationException;
 import com.code.group.challenge.projects_portfolio.project.mapper.ProjectMapper;
 import com.code.group.challenge.projects_portfolio.project.repository.ProjectRepository;
+import com.code.group.challenge.projects_portfolio.project.service.impl.DefaultProjectStatusTransitionPolicy;
 import com.code.group.challenge.projects_portfolio.project.service.impl.ProjectServiceImpl;
+import com.code.group.challenge.projects_portfolio.project.service.ProjectRiskCalculator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -34,8 +36,8 @@ public class ProjectMemberAllocationTest {
     void setUp() {
         projectRepository = Mockito.mock(ProjectRepository.class);
         memberService = Mockito.mock(MemberService.class);
-        projectMapper = new ProjectMapper(memberService);
-        projectService = new ProjectServiceImpl(projectRepository, projectMapper, memberService);
+        projectMapper = new ProjectMapper(new ProjectRiskCalculator());
+        projectService = new ProjectServiceImpl(projectRepository, projectMapper, memberService, new DefaultProjectStatusTransitionPolicy());
     }
 
     @Test

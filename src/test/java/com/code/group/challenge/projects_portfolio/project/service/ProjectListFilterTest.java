@@ -8,6 +8,7 @@ import com.code.group.challenge.projects_portfolio.project.domain.ProjectStatus;
 import com.code.group.challenge.projects_portfolio.project.dto.ProjectResponse;
 import com.code.group.challenge.projects_portfolio.project.mapper.ProjectMapper;
 import com.code.group.challenge.projects_portfolio.project.repository.ProjectRepository;
+import com.code.group.challenge.projects_portfolio.project.service.impl.DefaultProjectStatusTransitionPolicy;
 import com.code.group.challenge.projects_portfolio.project.service.impl.ProjectServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,7 +18,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -32,8 +33,8 @@ public class ProjectListFilterTest {
     void setUp() {
         projectRepository = Mockito.mock(ProjectRepository.class);
         memberService = Mockito.mock(MemberService.class);
-        projectMapper = new ProjectMapper(memberService);
-        projectService = new ProjectServiceImpl(projectRepository, projectMapper, memberService);
+        projectMapper = new ProjectMapper(new ProjectRiskCalculator());
+        projectService = new ProjectServiceImpl(projectRepository, projectMapper, memberService, new DefaultProjectStatusTransitionPolicy());
     }
 
     @Test

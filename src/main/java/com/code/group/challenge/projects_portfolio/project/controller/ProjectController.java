@@ -5,7 +5,9 @@ import com.code.group.challenge.projects_portfolio.project.dto.ProjectCreateRequ
 import com.code.group.challenge.projects_portfolio.project.dto.ProjectResponse;
 import com.code.group.challenge.projects_portfolio.project.dto.ProjectUpdateRequest;
 import com.code.group.challenge.projects_portfolio.project.dto.StatusChangeRequest;
-import com.code.group.challenge.projects_portfolio.project.service.ProjectService;
+import com.code.group.challenge.projects_portfolio.project.service.ProjectCommandService;
+import com.code.group.challenge.projects_portfolio.project.service.ProjectQueryService;
+import com.code.group.challenge.projects_portfolio.project.service.ProjectReportService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -19,15 +21,21 @@ import java.net.URI;
 @RequestMapping("/api/projects")
 public class ProjectController {
 
-    private final ProjectService projectService;
+    private final ProjectCommandService projectCommandService;
+    private final ProjectQueryService projectQueryService;
+    private final ProjectReportService projectReportService;
 
-    public ProjectController(ProjectService projectService) {
-        this.projectService = projectService;
+    public ProjectController(ProjectCommandService projectCommandService,
+                             ProjectQueryService projectQueryService,
+                             ProjectReportService projectReportService) {
+        this.projectCommandService = projectCommandService;
+        this.projectQueryService = projectQueryService;
+        this.projectReportService = projectReportService;
     }
 
     @PostMapping
     public ResponseEntity<ProjectResponse> create(@Valid @RequestBody ProjectCreateRequest req) {
-        var resp = projectService.create(req);
+        var resp = projectCommandService.create(req);
         return ResponseEntity.created(URI.create("/api/projects/" + resp.getId())).body(resp);
     }
 
@@ -39,49 +47,49 @@ public class ProjectController {
                                                        @RequestParam(required = false) String riskLevel,
                                                        @RequestParam(required = false) String name) {
         Pageable p = PageRequest.of(page, size);
-        var resp = projectService.list(p, status, managerId, riskLevel, name);
+        var resp = projectQueryService.list(p, status, managerId, riskLevel, name);
         return ResponseEntity.ok(resp);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ProjectResponse> getById(@PathVariable Long id) {
-        var resp = projectService.getById(id);
+        var resp = projectQueryService.getById(id);
         return ResponseEntity.ok(resp);
     }
 
     @GetMapping("/report")
     public ResponseEntity<com.code.group.challenge.projects_portfolio.project.dto.PortfolioReportResponse> report() {
-        var r = projectService.getReport();
+        var r = projectReportService.getReport();
         return ResponseEntity.ok(r);
     }
 
     @PatchMapping("/{id}/status")
     public ResponseEntity<ProjectResponse> changeStatus(@PathVariable Long id, @Valid @RequestBody StatusChangeRequest req) {
-        var resp = projectService.changeStatus(id, req.getStatus());
+        var resp = projectCommandService.changeStatus(id, req.getStatus());
         return ResponseEntity.ok(resp);
     }
 
     @PostMapping("/{id}/members")
     public ResponseEntity<ProjectResponse> addMember(@PathVariable Long id, @Valid @RequestBody MemberAssociationRequest req) {
-        var resp = projectService.addMember(id, req);
+        var resp = projectCommandService.addMember(id, req);
         return ResponseEntity.ok(resp);
     }
 
     @DeleteMapping("/{id}/members/{memberId}")
     public ResponseEntity<ProjectResponse> removeMember(@PathVariable Long id, @PathVariable Long memberId) {
-        var resp = projectService.removeMember(id, memberId);
+        var resp = projectCommandService.removeMember(id, memberId);
         return ResponseEntity.ok(resp);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<ProjectResponse> update(@PathVariable Long id, @Valid @RequestBody ProjectUpdateRequest req) {
-        var resp = projectService.update(id, req);
+        var resp = projectCommandService.update(id, req);
         return ResponseEntity.ok(resp);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        projectService.delete(id);
+        projectCommandService.delete(id);
         return ResponseEntity.noContent().build();
     }
 }

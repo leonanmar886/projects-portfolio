@@ -1,8 +1,11 @@
 package com.code.group.challenge.projects_portfolio.member.exception;
 
-public class MemberNotFoundException extends RuntimeException {
+import com.code.group.challenge.projects_portfolio.common.exception.ApplicationException;
+import org.springframework.http.HttpStatus;
+
+public class MemberNotFoundException extends ApplicationException {
     public MemberNotFoundException(Long id) {
-        super("Member not found: " + id);
+        super(HttpStatus.NOT_FOUND, "Member not found: " + id);
     }
 }
 

@@ -8,6 +8,10 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import com.code.group.challenge.projects_portfolio.project.exception.MemberAllocationException;
+import com.code.group.challenge.projects_portfolio.project.exception.ProjectDeletionException;
+import com.code.group.challenge.projects_portfolio.project.exception.ProjectValidationException;
+
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -41,6 +45,10 @@ public class Project {
     @ManyToOne(optional = false)
     @JoinColumn(name = "manager_id", nullable = false)
     private Member manager;
+
+    @Version
+    @Column(nullable = false)
+    private Long version;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -130,6 +138,14 @@ public class Project {
         this.manager = manager;
     }
 
+    public Long getVersion() {
+        return version;
+    }
+
+    public void setVersion(Long version) {
+        this.version = version;
+    }
+
     public ProjectStatus getStatus() {
         return status;
     }
@@ -152,6 +168,57 @@ public class Project {
 
     public OffsetDateTime getUpdatedAt() {
         return updatedAt;
+    }
+
+    public void validateDatesAndBudget(LocalDate start, LocalDate estimatedEnd, BigDecimal budgetValue) {
+        if (start != null && estimatedEnd != null && !start.isBefore(estimatedEnd)) {
+            throw new ProjectValidationException("startDate must be before estimatedEndDate");
+        }
+        if (budgetValue == null || budgetValue.doubleValue() <= 0) {
+            throw new ProjectValidationException("budget must be greater than 0");
+        }
+    }
+
+    public void validateUpdatable() {
+        if (status == ProjectStatus.ENCERRADO || status == ProjectStatus.CANCELADO) {
+            throw new ProjectValidationException("Cannot update a project that is ENCERRADO or CANCELADO");
+        }
+    }
+
+    public void validateUpdateDatesAndBudget(LocalDate start, LocalDate estimatedEnd, BigDecimal budgetValue) {
+        if (start != null && estimatedEnd != null && !start.isBefore(estimatedEnd)) {
+            throw new ProjectValidationException("startDate must be before estimatedEndDate");
+        }
+        if (budgetValue != null && budgetValue.doubleValue() <= 0) {
+            throw new ProjectValidationException("budget must be greater than 0");
+        }
+    }
+
+    public void validateRemovable() {
+        if (status == ProjectStatus.INICIADO || status == ProjectStatus.EM_ANDAMENTO || status == ProjectStatus.ENCERRADO) {
+            throw new ProjectDeletionException("Cannot delete project with status INICIADO, EM_ANDAMENTO or ENCERRADO");
+        }
+    }
+
+    public void validateMemberAllocation(com.code.group.challenge.projects_portfolio.member.domain.Member member, int activeProjectsCount) {
+        if (member.getRole() != com.code.group.challenge.projects_portfolio.member.domain.MemberRole.FUNCIONARIO) {
+            throw new ProjectValidationException("Only members with role FUNCIONARIO can be allocated");
+        }
+        if (members.size() >= 10) {
+            throw new MemberAllocationException("Project already has maximum of 10 members");
+        }
+        if (activeProjectsCount >= 3) {
+            throw new MemberAllocationException("Member is already allocated in 3 active projects");
+        }
+        if (members.stream().anyMatch(m -> m.getId().equals(member.getId()))) {
+            throw new MemberAllocationException("Member already allocated in this project");
+        }
+    }
+
+    public void validateNotEmptyWhenActive() {
+        if ((status == ProjectStatus.INICIADO || status == ProjectStatus.PLANEJADO || status == ProjectStatus.EM_ANDAMENTO) && members.isEmpty()) {
+            throw new ProjectValidationException("Project must have at least one member in active status");
+        }
     }
 
     @Override

@@ -1,8 +1,11 @@
 package com.code.group.challenge.projects_portfolio.project.exception;
 
-public class ProjectNotFoundException extends RuntimeException {
+import com.code.group.challenge.projects_portfolio.common.exception.ApplicationException;
+import org.springframework.http.HttpStatus;
+
+public class ProjectNotFoundException extends ApplicationException {
     public ProjectNotFoundException(Long id) {
-        super("Project not found: " + id);
+        super(HttpStatus.NOT_FOUND, "Project not found: " + id);
     }
 }
 

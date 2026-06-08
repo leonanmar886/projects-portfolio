@@ -2,8 +2,6 @@ package com.code.group.challenge.projects_portfolio.member.service.impl;
 
 import com.code.group.challenge.projects_portfolio.member.domain.Member;
 import com.code.group.challenge.projects_portfolio.member.exception.MemberNotFoundException;
-import com.code.group.challenge.projects_portfolio.member.exception.MemberRoleChangeException;
-import com.code.group.challenge.projects_portfolio.member.exception.MemberDeletionException;
 import com.code.group.challenge.projects_portfolio.member.repository.MemberRepository;
 import com.code.group.challenge.projects_portfolio.member.service.MemberService;
 import com.code.group.challenge.projects_portfolio.project.domain.ProjectStatus;
@@ -31,21 +29,25 @@ public class MemberServiceImpl implements MemberService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Member getById(Long id) {
         return memberRepository.findById(id).orElseThrow(() -> new MemberNotFoundException(id));
     }
 
     @Override
+    @Transactional(readOnly = true)
     public boolean existsById(Long id) {
         return memberRepository.existsById(id);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Member> findAll() {
         return memberRepository.findAll();
     }
 
     @Override
+    @Transactional(readOnly = true)
     public org.springframework.data.domain.Page<Member> list(org.springframework.data.domain.Pageable pageable, com.code.group.challenge.projects_portfolio.member.domain.MemberRole role, String name) {
         org.springframework.data.jpa.domain.Specification<Member> spec = (root, query, cb) -> {
             var predicates = new java.util.ArrayList<jakarta.persistence.criteria.Predicate>();
@@ -57,19 +59,16 @@ public class MemberServiceImpl implements MemberService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public int countActiveProjectsForMember(Long memberId) {
-        var excluded = List.of(ProjectStatus.ENCERRADO, ProjectStatus.CANCELADO);
-        return projectRepository.countActiveProjectsForMember(memberId, excluded);
+        return loadActiveProjectsForMember(memberId);
     }
 
     @Override
     public Member update(Long id, com.code.group.challenge.projects_portfolio.member.dto.MemberUpdateRequest req) {
         var m = memberRepository.findById(id).orElseThrow(() -> new MemberNotFoundException(id));
-        boolean changingToManager = req.getRole() != null && !req.getRole().isBlank() && !m.getRole().getValue().equalsIgnoreCase(req.getRole()) && req.getRole().equalsIgnoreCase("gerente");
-        if (changingToManager) {
-            int active = countActiveProjectsForMember(id);
-            if (active > 0) throw new MemberRoleChangeException("Cannot change role to gerente while member is allocated in active projects");
-        }
+        int active = loadActiveProjectsForMember(id);
+        m.validateRoleChangeToManager(req.getRole(), active);
         if (req.getName() != null) m.setName(req.getName());
         if (req.getRole() != null) m.setRole(com.code.group.challenge.projects_portfolio.member.domain.MemberRole.fromString(req.getRole()));
         return memberRepository.save(m);
@@ -80,8 +79,13 @@ public class MemberServiceImpl implements MemberService {
         var m = memberRepository.findById(id).orElseThrow(() -> new MemberNotFoundException(id));
         var excluded = List.of(ProjectStatus.ENCERRADO, ProjectStatus.CANCELADO);
         int managed = projectRepository.countActiveProjectsManagedBy(id, excluded);
-        int active = countActiveProjectsForMember(id);
-        if (managed > 0 || active > 0) throw new MemberDeletionException("Member is linked to active projects and cannot be removed");
+        int active = loadActiveProjectsForMember(id);
+        m.validateRemovable(managed, active);
         memberRepository.delete(m);
+    }
+
+    private int loadActiveProjectsForMember(Long memberId) {
+        var excluded = List.of(ProjectStatus.ENCERRADO, ProjectStatus.CANCELADO);
+        return projectRepository.countActiveProjectsForMember(memberId, excluded);
     }
 }
